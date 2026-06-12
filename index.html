@@ -72,15 +72,18 @@
         .bg-blue { background-color: #2196F3; }
         .bg-orange { background-color: #ff9800; }
         .bg-red { background-color: var(--danger); }
+        .bg-white { background-color: white; color: var(--dark); border: 1px solid var(--border); }
         
-        /* Side by Side layout for dashboard cards */
+        /* STRICT Side by Side layout for dashboard cards */
         .flex-cards {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 15px;
         }
         .flex-cards .card {
-            flex: 1; /* Makes cards take equal space side by side */
+            flex: 1; 
+            min-width: 0; /* Forces them to stay side-by-side on any screen size */
+            padding: 15px 5px; /* Adjusted padding for smaller screens */
         }
 
         table {
@@ -161,6 +164,28 @@
             border-radius: 5px;
         }
         .flex { display: flex; gap: 10px; }
+        
+        /* Chart Details Styles */
+        .chart-legend {
+            margin-top: 15px;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #eee;
+            padding: 4px 0;
+        }
+        .color-box {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -205,6 +230,19 @@
                 <div class="card bg-red">
                     <h4>ਕੁੱਲ ਖਰਚਾ</h4>
                     <h2 id="dash-expense">₹0</h2>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px; border-top: 1px solid #ccc; padding-top: 15px;">ਸ਼੍ਰੇਣੀ ਅਨੁਸਾਰ ਵਿਸ਼ਲੇਸ਼ਣ (Pie Charts)</h3>
+            <div class="flex-cards" style="flex-wrap: wrap;"> <div class="card bg-white" style="min-width: 250px;">
+                    <h4 style="margin-top: 0;">ਖਰਚੇ (Expenses)</h4>
+                    <canvas id="expensePie" width="200" height="200" style="margin: auto; display: block;"></canvas>
+                    <div id="expense-legend" class="chart-legend"></div>
+                </div>
+                <div class="card bg-white" style="min-width: 250px;">
+                    <h4 style="margin-top: 0;">ਆਮਦਨ (Income)</h4>
+                    <canvas id="incomePie" width="200" height="200" style="margin: auto; display: block;"></canvas>
+                    <div id="income-legend" class="chart-legend"></div>
                 </div>
             </div>
         </div>
@@ -313,12 +351,24 @@
     </div>
 
     <script>
-        // --- State Management ---
+        const chartColors = ['#f44336', '#2196F3', '#ff9800', '#4CAF50', '#9c27b0', '#00bcd4', '#e91e63', '#3f51b5', '#795548', '#607D8B'];
+
+        // --- State Management & Cleanup ---
         let data = JSON.parse(localStorage.getItem('financeData')) || {
             transactions: [],
             expenseCats: ['ਭੋਜਨ', 'ਪੈਟਰੋਲ/ਸਫ਼ਰ'], 
             incomeCats: ['ਤਨਖਾਹ'] 
         };
+
+        // ਹੇਠਲਾ ਫਿਲਟਰ ਬ੍ਰਾਊਜ਼ਰ ਦੀ ਮੈਮਰੀ ਵਿੱਚੋਂ ਪੁਰਾਣੀਆਂ ਫਾਲਤੂ ਕੈਟਾਗਰੀਆਂ ਨੂੰ ਆਟੋਮੈਟਿਕ ਹਟਾ ਦੇਵੇਗਾ
+        const unwantedExp = ['ਬਿੱਲ', 'ਖਰੀਦਦਾਰੀ'];
+        const unwantedInc = ['ਬਿਜ਼ਨਸ'];
+        data.expenseCats = data.expenseCats.filter(c => !unwantedExp.includes(c));
+        data.incomeCats = data.incomeCats.filter(c => !unwantedInc.includes(c));
+        
+        // ਜੇਕਰ ਗਲਤੀ ਨਾਲ ਸਭ ਕੁਝ ਡਿਲੀਟ ਹੋ ਜਾਵੇ ਤਾਂ ਮੁਢਲੀਆਂ ਕੈਟਾਗਰੀਆਂ ਰੱਖੋ
+        if(data.expenseCats.length === 0) data.expenseCats = ['ਭੋਜਨ', 'ਪੈਟਰੋਲ/ਸਫ਼ਰ'];
+        if(data.incomeCats.length === 0) data.incomeCats = ['ਤਨਖਾਹ'];
 
         // --- Initialize App ---
         document.getElementById('entry-date').valueAsDate = new Date();
@@ -335,10 +385,9 @@
             updateUI();
         }
 
-        // --- Toggle Buttons Selection Logic with Tick Marks ---
+        // --- Toggle Buttons Selection Logic ---
         function setType(typeValue) {
             document.getElementById('entry-type').value = typeValue;
-            
             const btnExp = document.getElementById('btn-type-expense');
             const btnInc = document.getElementById('btn-type-income');
 
@@ -358,7 +407,6 @@
 
         function setAccount(accValue) {
             document.getElementById('entry-account').value = accValue;
-            
             const btnBank = document.getElementById('btn-acc-bank');
             const btnCash = document.getElementById('btn-acc-cash');
 
@@ -379,6 +427,7 @@
             renderDashboard();
             renderTransactions();
             renderAdminLists();
+            drawCharts();
             localStorage.setItem('financeData', JSON.stringify(data));
         }
 
@@ -399,7 +448,6 @@
         // --- Form Submission ---
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const id = document.getElementById('edit-id').value;
             const type = document.getElementById('entry-type').value;
             const category = document.getElementById('entry-category').value;
@@ -457,6 +505,90 @@
             document.getElementById('dash-cash').innerText = '₹' + cashBal;
             document.getElementById('dash-income').innerText = '₹' + totInc;
             document.getElementById('dash-expense').innerText = '₹' + totExp;
+        }
+
+        // --- HTML5 Canvas Pie Charts ---
+        function drawCharts() {
+            let expData = {};
+            let incData = {};
+            let totalExp = 0;
+            let totalInc = 0;
+
+            data.transactions.forEach(t => {
+                if(t.type === 'expense') {
+                    expData[t.category] = (expData[t.category] || 0) + t.amount;
+                    totalExp += t.amount;
+                } else {
+                    incData[t.category] = (incData[t.category] || 0) + t.amount;
+                    totalInc += t.amount;
+                }
+            });
+
+            renderSingleChart('expensePie', 'expense-legend', expData, totalExp, 'ਖਰਚਾ');
+            renderSingleChart('incomePie', 'income-legend', incData, totalInc, 'ਆਮਦਨ');
+        }
+
+        function renderSingleChart(canvasId, legendId, chartData, total, typeLabel) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const legendDiv = document.getElementById(legendId);
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const radius = Math.min(w, h) / 2;
+
+            ctx.clearRect(0, 0, w, h);
+            legendDiv.innerHTML = '';
+
+            if (total === 0) {
+                ctx.fillStyle = '#e0e0e0';
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#888';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '14px Arial';
+                ctx.fillText(`ਕੋਈ ${typeLabel} ਨਹੀਂ`, cx, cy);
+                legendDiv.innerHTML = `<p style="text-align:center; color:gray;">ਅਜੇ ਕੋਈ ਡਾਟਾ ਨਹੀਂ ਹੈ।</p>`;
+                return;
+            }
+
+            let startAngle = -Math.PI / 2;
+            let colorIndex = 0;
+            let legendHtml = '';
+
+            for (let category in chartData) {
+                let val = chartData[category];
+                if (val <= 0) continue;
+
+                let sliceAngle = (val / total) * 2 * Math.PI;
+                let color = chartColors[colorIndex % chartColors.length];
+
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fill();
+
+                let percent = ((val / total) * 100).toFixed(1);
+                legendHtml += `
+                    <div class="legend-item">
+                        <div>
+                            <span class="color-box" style="background-color: ${color};"></span>
+                            <b>${category}</b>
+                        </div>
+                        <div>₹${val} <span style="color:gray; font-size:12px;">(${percent}%)</span></div>
+                    </div>`;
+
+                startAngle += sliceAngle;
+                colorIndex++;
+            }
+
+            legendDiv.innerHTML = legendHtml;
         }
 
         // --- Render Transactions ---
@@ -554,7 +686,6 @@
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             
-            // Generate Filename with Date
             const today = new Date();
             const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
             const fileName = `Income_Management_${dateStr}.json`;
@@ -586,7 +717,7 @@
                 } catch (err) {
                     alert("ਫਾਈਲ ਪੜ੍ਹਨ ਵਿੱਚ ਗਲਤੀ ਆਈ ਹੈ।");
                 }
-                event.target.value = ''; // Reset input
+                event.target.value = '';
             };
             reader.readAsText(file);
         }
