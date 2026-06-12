@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ਮੇਰਾ ਫਾਈਨਾਂਸ ਮੈਨੇਜਰ</title>
+    <title>Income Management</title>
     <style>
         :root {
             --primary: #4CAF50;
@@ -61,12 +61,7 @@
         .tab-content.active {
             display: block;
         }
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+        
         .card {
             padding: 15px;
             border-radius: 5px;
@@ -78,6 +73,16 @@
         .bg-orange { background-color: #ff9800; }
         .bg-red { background-color: var(--danger); }
         
+        /* Side by Side layout for dashboard cards */
+        .flex-cards {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .flex-cards .card {
+            flex: 1; /* Makes cards take equal space side by side */
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -161,7 +166,7 @@
 <body>
 
     <header>
-        <h2>ਮੇਰਾ ਫਾਈਨਾਂਸ ਮੈਨੇਜਰ</h2>
+        <h2>Income Management</h2>
     </header>
 
     <nav>
@@ -175,11 +180,13 @@
         
         <div id="dashboard" class="tab-content active">
             <h3>ਵਿੱਤੀ ਸਾਰਾਂਸ਼</h3>
-            <div class="cards">
-                <div class="card bg-green">
-                    <h4>ਕੁੱਲ ਬਕਾਇਆ</h4>
-                    <h2 id="dash-total">₹0</h2>
-                </div>
+            
+            <div class="card bg-green" style="margin-bottom: 15px;">
+                <h4>ਕੁੱਲ ਬਕਾਇਆ</h4>
+                <h2 id="dash-total">₹0</h2>
+            </div>
+
+            <div class="flex-cards">
                 <div class="card bg-blue">
                     <h4>ਬੈਂਕ ਵਿੱਚ</h4>
                     <h2 id="dash-bank">₹0</h2>
@@ -189,7 +196,8 @@
                     <h2 id="dash-cash">₹0</h2>
                 </div>
             </div>
-            <div class="cards">
+
+            <div class="flex-cards">
                 <div class="card bg-green" style="background-color: #009688;">
                     <h4>ਕੁੱਲ ਆਮਦਨ</h4>
                     <h2 id="dash-income">₹0</h2>
@@ -546,9 +554,14 @@
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             
+            // Generate Filename with Date
+            const today = new Date();
+            const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            const fileName = `Income_Management_${dateStr}.json`;
+            
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'finance_backup.json';
+            a.download = fileName;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
