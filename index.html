@@ -82,8 +82,8 @@
         }
         .flex-cards .card {
             flex: 1; 
-            min-width: 0; /* Forces them to stay side-by-side on any screen size */
-            padding: 15px 5px; /* Adjusted padding for smaller screens */
+            min-width: 0; 
+            padding: 15px 5px;
         }
 
         table {
@@ -234,7 +234,8 @@
             </div>
 
             <h3 style="margin-top: 25px; border-top: 1px solid #ccc; padding-top: 15px;">ਸ਼੍ਰੇਣੀ ਅਨੁਸਾਰ ਵਿਸ਼ਲੇਸ਼ਣ (Pie Charts)</h3>
-            <div class="flex-cards" style="flex-wrap: wrap;"> <div class="card bg-white" style="min-width: 250px;">
+            <div class="flex-cards" style="flex-wrap: wrap;">
+                <div class="card bg-white" style="min-width: 250px;">
                     <h4 style="margin-top: 0;">ਖਰਚੇ (Expenses)</h4>
                     <canvas id="expensePie" width="200" height="200" style="margin: auto; display: block;"></canvas>
                     <div id="expense-legend" class="chart-legend"></div>
@@ -262,6 +263,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label>ਰਕਮ (₹):</label>
+                    <input type="number" id="entry-amount" required min="1">
+                </div>
+
+                <div class="form-group">
                     <label>ਖਾਤਾ:</label>
                     <div class="btn-group">
                         <button type="button" id="btn-acc-bank" class="toggle-btn active" onclick="setAccount('Bank')">✔ ਬੈਂਕ</button>
@@ -276,17 +282,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label>ਰਕਮ (₹):</label>
-                    <input type="number" id="entry-amount" required min="1">
-                </div>
-                <div class="form-group">
                     <label>ਮਿਤੀ:</label>
                     <input type="date" id="entry-date" required>
                 </div>
+
                 <div class="form-group">
                     <label>ਵੇਰਵਾ:</label>
                     <input type="text" id="entry-note" placeholder="ਵੇਰਵਾ ਲਿਖੋ...">
                 </div>
+                
                 <button type="submit" class="btn btn-primary">ਸੇਵ ਕਰੋ</button>
                 <button type="button" class="btn btn-danger" onclick="resetForm()" style="margin-left: 10px;">ਕੈਂਸਲ</button>
             </form>
@@ -360,13 +364,11 @@
             incomeCats: ['ਤਨਖਾਹ'] 
         };
 
-        // ਹੇਠਲਾ ਫਿਲਟਰ ਬ੍ਰਾਊਜ਼ਰ ਦੀ ਮੈਮਰੀ ਵਿੱਚੋਂ ਪੁਰਾਣੀਆਂ ਫਾਲਤੂ ਕੈਟਾਗਰੀਆਂ ਨੂੰ ਆਟੋਮੈਟਿਕ ਹਟਾ ਦੇਵੇਗਾ
         const unwantedExp = ['ਬਿੱਲ', 'ਖਰੀਦਦਾਰੀ'];
         const unwantedInc = ['ਬਿਜ਼ਨਸ'];
         data.expenseCats = data.expenseCats.filter(c => !unwantedExp.includes(c));
         data.incomeCats = data.incomeCats.filter(c => !unwantedInc.includes(c));
         
-        // ਜੇਕਰ ਗਲਤੀ ਨਾਲ ਸਭ ਕੁਝ ਡਿਲੀਟ ਹੋ ਜਾਵੇ ਤਾਂ ਮੁਢਲੀਆਂ ਕੈਟਾਗਰੀਆਂ ਰੱਖੋ
         if(data.expenseCats.length === 0) data.expenseCats = ['ਭੋਜਨ', 'ਪੈਟਰੋਲ/ਸਫ਼ਰ'];
         if(data.incomeCats.length === 0) data.incomeCats = ['ਤਨਖਾਹ'];
 
