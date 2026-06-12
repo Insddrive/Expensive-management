@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ਮੇਰਾ ਫਾਈਨਾਂਸ ਮੈਨੇਜਰ</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --danger: #f44336;
+            --dark: #333;
+            --light: #f4f4f9;
+            --border: #ccc;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        header {
+            background-color: var(--dark);
+            color: white;
+            padding: 4px 10px;
+            text-align: center;
+        }
+        header h2 {
+            margin: 5px 0;
+            font-size: 18px;
+            letter-spacing: 0.5px;
+        }
+        nav {
+            display: flex;
+            background-color: #444;
+        }
+        nav button {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        nav button:hover, nav button.active {
+            background-color: var(--primary);
+        }
+        .container {
+            padding: 15px;
+            max-width: 1000px;
+            margin: auto;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .card {
+            padding: 15px;
+            border-radius: 5px;
+            color: white;
+            text-align: center;
+        }
+        .bg-green { background-color: var(--primary); }
+        .bg-blue { background-color: #2196F3; }
+        .bg-orange { background-color: #ff9800; }
+        .bg-red { background-color: var(--danger); }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table, th, td {
+            border: 1px solid var(--border);
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th { background-color: #eee; }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        
+        /* Black and White Buttons */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--dark);
+            background-color: white;
+            color: var(--dark);
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .toggle-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .toggle-btn.active {
+            background-color: var(--dark);
+            color: white;
+            border-color: var(--dark);
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .btn-primary { background-color: var(--primary); }
+        .btn-secondary { background-color: #607D8B; }
+        .btn-danger { background-color: var(--danger); }
+        .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px;}
+        .btn-del { background-color: var(--danger); color: white; padding: 5px 10px;}
+        
+        .admin-section {
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .flex { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>ਮੇਰਾ ਫਾਈਨਾਂਸ ਮੈਨੇਜਰ</h2>
+    </header>
+
+    <nav>
+        <button class="tab-btn active" onclick="openTab('dashboard')">ਡੈਸ਼ਬੋਰਡ</button>
+        <button class="tab-btn" onclick="openTab('addEntry')">ਐਂਟਰੀ ਸ਼ਾਮਲ ਕਰੋ</button>
+        <button class="tab-btn" onclick="openTab('transactions')">ਲੈਣ-ਦੇਣ (ਹਿਸਾਬ)</button>
+        <button class="tab-btn" onclick="openTab('admin')">ਐਡਮਿਨ ਪੈਨਲ</button>
+    </nav>
+
+    <div class="container">
+        
+        <div id="dashboard" class="tab-content active">
+            <h3>ਵਿੱਤੀ ਸਾਰਾਂਸ਼</h3>
+            <div class="cards">
+                <div class="card bg-green">
+                    <h4>ਕੁੱਲ ਬਕਾਇਆ</h4>
+                    <h2 id="dash-total">₹0</h2>
+                </div>
+                <div class="card bg-blue">
+                    <h4>ਬੈਂਕ ਵਿੱਚ</h4>
+                    <h2 id="dash-bank">₹0</h2>
+                </div>
+                <div class="card bg-orange">
+                    <h4>ਨਕਦ</h4>
+                    <h2 id="dash-cash">₹0</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <div class="card bg-green" style="background-color: #009688;">
+                    <h4>ਕੁੱਲ ਆਮਦਨ</h4>
+                    <h2 id="dash-income">₹0</h2>
+                </div>
+                <div class="card bg-red">
+                    <h4>ਕੁੱਲ ਖਰਚਾ</h4>
+                    <h2 id="dash-expense">₹0</h2>
+                </div>
+            </div>
+        </div>
+
+        <div id="addEntry" class="tab-content">
+            <h3 id="form-title">ਨਵੀਂ ਐਂਟਰੀ ਸ਼ਾਮਲ ਕਰੋ</h3>
+            <form id="entryForm">
+                <input type="hidden" id="edit-id">
+                
+                <div class="form-group">
+                    <label>ਕਿਸਮ:</label>
+                    <div class="btn-group">
+                        <button type="button" id="btn-type-expense" class="toggle-btn active" onclick="setType('expense')">✔ ਖਰਚਾ</button>
+                        <button type="button" id="btn-type-income" class="toggle-btn" onclick="setType('income')">ਆਮਦਨ</button>
+                    </div>
+                    <input type="hidden" id="entry-type" value="expense">
+                </div>
+
+                <div class="form-group">
+                    <label>ਖਾਤਾ:</label>
+                    <div class="btn-group">
+                        <button type="button" id="btn-acc-bank" class="toggle-btn active" onclick="setAccount('Bank')">✔ ਬੈਂਕ</button>
+                        <button type="button" id="btn-acc-cash" class="toggle-btn" onclick="setAccount('Cash')">ਨਕਦ</button>
+                    </div>
+                    <input type="hidden" id="entry-account" value="Bank">
+                </div>
+
+                <div class="form-group">
+                    <label>ਕੈਟਾਗਰੀ:</label>
+                    <select id="entry-category" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label>ਰਕਮ (₹):</label>
+                    <input type="number" id="entry-amount" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>ਮਿਤੀ:</label>
+                    <input type="date" id="entry-date" required>
+                </div>
+                <div class="form-group">
+                    <label>ਵੇਰਵਾ:</label>
+                    <input type="text" id="entry-note" placeholder="ਵੇਰਵਾ ਲਿਖੋ...">
+                </div>
+                <button type="submit" class="btn btn-primary">ਸੇਵ ਕਰੋ</button>
+                <button type="button" class="btn btn-danger" onclick="resetForm()" style="margin-left: 10px;">ਕੈਂਸਲ</button>
+            </form>
+        </div>
+
+        <div id="transactions" class="tab-content">
+            <h3>ਸਾਰਾ ਲੈਣ-ਦੇਣ</h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ਮਿਤੀ</th>
+                            <th>ਕਿਸਮ</th>
+                            <th>ਕੈਟਾਗਰੀ</th>
+                            <th>ਖਾਤਾ</th>
+                            <th>ਵੇਰਵਾ</th>
+                            <th>ਰਕਮ</th>
+                            <th>ਐਕਸ਼ਨ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-list"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+                <h4>ਡਾਟਾ ਬੈਕਅੱਪ (Backup)</h4>
+                <div class="flex">
+                    <button class="btn btn-primary" onclick="exportData()">ਡਾਟਾ ਡਾਊਨਲੋਡ ਕਰੋ</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">ਡਾਟਾ ਅਪਲੋਡ ਕਰੋ</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                </div>
+            </div>
+        </div>
+
+        <div id="admin" class="tab-content">
+            <h3>ਐਡਮਿਨ ਪੈਨਲ</h3>
+            
+            <div class="admin-section">
+                <h4>ਖਰਚਾ ਕੈਟਾਗਰੀ</h4>
+                <div class="flex">
+                    <input type="text" id="new-exp-cat" placeholder="ਨਵੀਂ ਕੈਟਾਗਰੀ...">
+                    <button class="btn btn-primary" onclick="addCategory('expense')">ਸ਼ਾਮਲ ਕਰੋ</button>
+                </div>
+                <p>ਮੌਜੂਦਾ: <span id="list-exp-cat" style="color: gray;"></span></p>
+            </div>
+
+            <div class="admin-section">
+                <h4>ਆਮਦਨ ਸਰੋਤ</h4>
+                <div class="flex">
+                    <input type="text" id="new-inc-cat" placeholder="ਨਵਾਂ ਸਰੋਤ...">
+                    <button class="btn btn-primary" onclick="addCategory('income')">ਸ਼ਾਮਲ ਕਰੋ</button>
+                </div>
+                <p>ਮੌਜੂਦਾ: <span id="list-inc-cat" style="color: gray;"></span></p>
+            </div>
+
+            <div class="admin-section" style="border-color: var(--danger);">
+                <h4 style="color: var(--danger);">ਡਾਟਾ ਰੀਸੈੱਟ</h4>
+                <button class="btn btn-danger" onclick="clearAllData()">ਸਾਰਾ ਡਾਟਾ ਡਿਲੀਟ ਕਰੋ</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- State Management ---
+        let data = JSON.parse(localStorage.getItem('financeData')) || {
+            transactions: [],
+            expenseCats: ['ਭੋਜਨ', 'ਪੈਟਰੋਲ/ਸਫ਼ਰ'], 
+            incomeCats: ['ਤਨਖਾਹ'] 
+        };
+
+        // --- Initialize App ---
+        document.getElementById('entry-date').valueAsDate = new Date();
+        updateCategories();
+        updateUI();
+
+        // --- Tab Switching ---
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+            updateUI();
+        }
+
+        // --- Toggle Buttons Selection Logic with Tick Marks ---
+        function setType(typeValue) {
+            document.getElementById('entry-type').value = typeValue;
+            
+            const btnExp = document.getElementById('btn-type-expense');
+            const btnInc = document.getElementById('btn-type-income');
+
+            if(typeValue === 'expense') {
+                btnExp.classList.add('active');
+                btnExp.innerHTML = '✔ ਖਰਚਾ';
+                btnInc.classList.remove('active');
+                btnInc.innerHTML = 'ਆਮਦਨ';
+            } else {
+                btnInc.classList.add('active');
+                btnInc.innerHTML = '✔ ਆਮਦਨ';
+                btnExp.classList.remove('active');
+                btnExp.innerHTML = 'ਖਰਚਾ';
+            }
+            updateCategories();
+        }
+
+        function setAccount(accValue) {
+            document.getElementById('entry-account').value = accValue;
+            
+            const btnBank = document.getElementById('btn-acc-bank');
+            const btnCash = document.getElementById('btn-acc-cash');
+
+            if(accValue === 'Bank') {
+                btnBank.classList.add('active');
+                btnBank.innerHTML = '✔ ਬੈਂਕ';
+                btnCash.classList.remove('active');
+                btnCash.innerHTML = 'ਨਕਦ';
+            } else {
+                btnCash.classList.add('active');
+                btnCash.innerHTML = '✔ ਨਕਦ';
+                btnBank.classList.remove('active');
+                btnBank.innerHTML = 'ਬੈਂਕ';
+            }
+        }
+
+        function updateUI() {
+            renderDashboard();
+            renderTransactions();
+            renderAdminLists();
+            localStorage.setItem('financeData', JSON.stringify(data));
+        }
+
+        function updateCategories() {
+            const type = document.getElementById('entry-type').value;
+            const catSelect = document.getElementById('entry-category');
+            catSelect.innerHTML = '';
+            
+            let cats = type === 'expense' ? data.expenseCats : data.incomeCats;
+            cats.forEach(cat => {
+                let option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                catSelect.appendChild(option);
+            });
+        }
+
+        // --- Form Submission ---
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('edit-id').value;
+            const type = document.getElementById('entry-type').value;
+            const category = document.getElementById('entry-category').value;
+            const account = document.getElementById('entry-account').value;
+            const amount = parseFloat(document.getElementById('entry-amount').value);
+            const date = document.getElementById('entry-date').value;
+            const note = document.getElementById('entry-note').value;
+
+            const transaction = {
+                id: id ? parseInt(id) : Date.now(),
+                type, category, account, amount, date, note
+            };
+
+            if (id) {
+                const index = data.transactions.findIndex(t => t.id == id);
+                data.transactions[index] = transaction;
+            } else {
+                data.transactions.push(transaction);
+            }
+
+            resetForm();
+            alert('ਐਂਟਰੀ ਸੇਵ ਹੋ ਗਈ ਹੈ!');
+            updateUI();
+            openTab('transactions');
+        });
+
+        function resetForm() {
+            document.getElementById('edit-id').value = '';
+            setType('expense');
+            setAccount('Bank');
+            document.getElementById('entry-amount').value = '';
+            document.getElementById('entry-note').value = '';
+            document.getElementById('entry-date').valueAsDate = new Date();
+            document.getElementById('form-title').innerText = 'ਨਵੀਂ ਐਂਟਰੀ ਸ਼ਾਮਲ ਕਰੋ';
+        }
+
+        // --- Render Dashboard ---
+        function renderDashboard() {
+            let bankBal = 0, cashBal = 0, totInc = 0, totExp = 0;
+
+            data.transactions.forEach(t => {
+                if (t.type === 'income') {
+                    totInc += t.amount;
+                    if (t.account === 'Bank') bankBal += t.amount;
+                    else cashBal += t.amount;
+                } else {
+                    totExp += t.amount;
+                    if (t.account === 'Bank') bankBal -= t.amount;
+                    else cashBal -= t.amount;
+                }
+            });
+
+            document.getElementById('dash-total').innerText = '₹' + (bankBal + cashBal);
+            document.getElementById('dash-bank').innerText = '₹' + bankBal;
+            document.getElementById('dash-cash').innerText = '₹' + cashBal;
+            document.getElementById('dash-income').innerText = '₹' + totInc;
+            document.getElementById('dash-expense').innerText = '₹' + totExp;
+        }
+
+        // --- Render Transactions ---
+        function renderTransactions() {
+            const tbody = document.getElementById('transaction-list');
+            tbody.innerHTML = '';
+
+            let sorted = [...data.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(t => {
+                let tr = document.createElement('tr');
+                let typeText = t.type === 'income' ? '<span style="color:green;">ਆਮਦਨ</span>' : '<span style="color:red;">ਖਰਚਾ</span>';
+                let amtColor = t.type === 'income' ? 'green' : 'red';
+                
+                tr.innerHTML = `
+                    <td>${t.date}</td>
+                    <td>${typeText}</td>
+                    <td>${t.category}</td>
+                    <td>${t.account === 'Bank' ? 'ਬੈਂਕ' : 'ਨਕਦ'}</td>
+                    <td>${t.note}</td>
+                    <td style="color:${amtColor}; font-weight:bold;">₹${t.amount}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editEntry(${t.id})">ਐਡਿਟ</button>
+                        <button class="btn-del" onclick="deleteEntry(${t.id})">ਡਿਲੀਟ</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- Edit / Delete ---
+        function deleteEntry(id) {
+            if(confirm("ਕੀ ਤੁਸੀਂ ਇਸ ਐਂਟਰੀ ਨੂੰ ਡਿਲੀਟ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?")) {
+                data.transactions = data.transactions.filter(t => t.id !== id);
+                updateUI();
+            }
+        }
+
+        function editEntry(id) {
+            const t = data.transactions.find(t => t.id === id);
+            if (!t) return;
+
+            document.getElementById('edit-id').value = t.id;
+            setType(t.type);
+            setAccount(t.account);
+            document.getElementById('entry-category').value = t.category;
+            document.getElementById('entry-amount').value = t.amount;
+            document.getElementById('entry-date').value = t.date;
+            document.getElementById('entry-note').value = t.note;
+
+            document.getElementById('form-title').innerText = 'ਐਂਟਰੀ ਐਡਿਟ ਕਰੋ';
+            openTab('addEntry');
+        }
+
+        // --- Admin Functions ---
+        function addCategory(type) {
+            const inputId = type === 'expense' ? 'new-exp-cat' : 'new-inc-cat';
+            const val = document.getElementById(inputId).value.trim();
+            
+            if (val === '') {
+                alert("ਕਿਰਪਾ ਕਰਕੇ ਨਾਮ ਭਰੋ!");
+                return;
+            }
+
+            if (type === 'expense') {
+                data.expenseCats.push(val);
+            } else {
+                data.incomeCats.push(val);
+            }
+
+            document.getElementById(inputId).value = '';
+            alert("ਸ਼ਾਮਲ ਕਰ ਦਿੱਤੀ ਗਈ ਹੈ!");
+            updateCategories();
+            updateUI();
+        }
+
+        function renderAdminLists() {
+            document.getElementById('list-exp-cat').innerText = data.expenseCats.join(', ');
+            document.getElementById('list-inc-cat').innerText = data.incomeCats.join(', ');
+        }
+
+        function clearAllData() {
+            if(confirm("ਕੀ ਤੁਸੀਂ ਸਾਰਾ ਡਾਟਾ ਡਿਲੀਟ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?")) {
+                data.transactions = [];
+                data.expenseCats = ['ਭੋਜਨ', 'ਪੈਟਰੋਲ/ਸਫ਼ਰ'];
+                data.incomeCats = ['ਤਨਖਾਹ'];
+                updateUI();
+                alert("ਸਾਰਾ ਡਾਟਾ ਸਾਫ਼ ਹੋ ਗਿਆ ਹੈ।");
+            }
+        }
+
+        // --- Import / Export JSON ---
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'finance_backup.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData && importedData.transactions) {
+                        data = importedData;
+                        updateUI();
+                        alert("ਡਾਟਾ ਸਫਲਤਾਪੂਰਵਕ ਅਪਲੋਡ ਹੋ ਗਿਆ ਹੈ!");
+                    } else {
+                        alert("ਫਾਈਲ ਦਾ ਫਾਰਮੈਟ ਸਹੀ ਨਹੀਂ ਹੈ।");
+                    }
+                } catch (err) {
+                    alert("ਫਾਈਲ ਪੜ੍ਹਨ ਵਿੱਚ ਗਲਤੀ ਆਈ ਹੈ।");
+                }
+                event.target.value = ''; // Reset input
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
