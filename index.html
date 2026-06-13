@@ -22,6 +22,7 @@
             margin: 0;
             background-color: var(--light);
             color: var(--dark);
+            overflow-x: hidden; /* ਸਵਾਈਪ ਕਰਦੇ ਸਮੇਂ ਸਕਰੀਨ ਨੂੰ ਹਿੱਲਣ ਤੋਂ ਰੋਕਣ ਲਈ */
         }
         header {
             background-color: var(--dark);
@@ -37,6 +38,8 @@
         nav {
             display: flex;
             background-color: #444;
+            position: relative;
+            z-index: 10;
         }
         nav button {
             flex: 1;
@@ -47,14 +50,31 @@
             font-size: 15px;
             cursor: pointer;
             transition: 0.3s;
+            position: relative;
         }
         nav button:hover, nav button.active {
             background-color: var(--primary);
         }
+        
+        /* ਤਿਕੋਣਾ ਨਿਸ਼ਾਨ (Triangle indicator for active tab) */
+        nav button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid var(--primary);
+            z-index: 20;
+        }
+
         .container {
             padding: 15px;
             max-width: 1000px;
             margin: auto;
+            position: relative;
+            z-index: 1;
         }
         .tab-content {
             display: none;
@@ -65,6 +85,12 @@
         }
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .card {
@@ -191,6 +217,27 @@
             margin-right: 8px;
             border-radius: 2px;
         }
+
+        /* Category Delete Badges */
+        .cat-badge {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 6px 12px;
+            margin: 5px 5px 0 0;
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--dark);
+        }
+        .cat-badge .del-icon {
+            color: var(--danger);
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .cat-badge .del-icon:hover {
+            color: darkred;
+        }
     </style>
 </head>
 <body>
@@ -206,7 +253,7 @@
         <button class="tab-btn" onclick="openTab('admin')">ਐਡਮਿਨ ਪੈਨਲ</button>
     </nav>
 
-    <div class="container">
+    <div class="container" id="swipeArea">
         
         <div id="dashboard" class="tab-content active">
             <h3>ਵਿੱਤੀ ਸਾਰਾਂਸ਼</h3>
@@ -238,7 +285,7 @@
                 </div>
             </div>
 
-            <h3 style="margin-top: 25px; border-top: 1px solid #ccc; padding-top: 15px;">ਸ਼੍ਰੇਣੀ ਅਨੁਸਾਰ ਵਿਸ਼ਲੇਸ਼ਣ (Pie Charts)</h3>
+            <h3 style="margin-top: 25px; border-top: 1px solid #ccc; padding-top: 15px;">ਸ਼੍ਰੇਣੀ ਅਨੁਸਾਰ ਵਿਸ਼ਲੇਸ਼ਣ</h3>
             <div class="flex-cards" style="flex-wrap: wrap;">
                 <div class="card bg-white" style="min-width: 250px;">
                     <h4 style="margin-top: 0;">ਖਰਚੇ (Expenses)</h4>
@@ -339,7 +386,7 @@
                     <input type="text" id="new-exp-cat" placeholder="ਨਵੀਂ ਕੈਟਾਗਰੀ...">
                     <button class="btn btn-primary" onclick="addCategory('expense')">ਸ਼ਾਮਲ ਕਰੋ</button>
                 </div>
-                <p>ਮੌਜੂਦਾ: <span id="list-exp-cat" style="color: gray;"></span></p>
+                <div style="margin-top: 10px;" id="list-exp-cat"></div>
             </div>
 
             <div class="admin-section">
@@ -348,7 +395,7 @@
                     <input type="text" id="new-inc-cat" placeholder="ਨਵਾਂ ਸਰੋਤ...">
                     <button class="btn btn-primary" onclick="addCategory('income')">ਸ਼ਾਮਲ ਕਰੋ</button>
                 </div>
-                <p>ਮੌਜੂਦਾ: <span id="list-inc-cat" style="color: gray;"></span></p>
+                <div style="margin-top: 10px;" id="list-inc-cat"></div>
             </div>
 
             <div class="admin-section" style="border-color: var(--danger);">
@@ -361,8 +408,9 @@
 
     <script>
         const chartColors = ['#f44336', '#2196F3', '#ff9800', '#4CAF50', '#9c27b0', '#00bcd4', '#e91e63', '#3f51b5', '#795548', '#607D8B'];
+        const tabsList = ['dashboard', 'addEntry', 'transactions', 'admin'];
 
-        // --- State Management & Cleanup ---
+        // --- State Management ---
         let data = JSON.parse(localStorage.getItem('financeData')) || {
             transactions: [],
             expenseCats: ['ਭੋਜਨ', 'ਪੈਟਰੋਲ/ਸਫ਼ਰ'], 
@@ -382,17 +430,61 @@
         updateCategories();
         updateUI();
 
-        // --- Tab Switching ---
+        // --- Tab Switching Logic ---
         function openTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             
             document.getElementById(tabName).classList.add('active');
-            event.currentTarget.classList.add('active');
+            
+            const btnIndex = tabsList.indexOf(tabName);
+            document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+            
             updateUI();
         }
 
-        // --- Toggle Buttons Selection Logic ---
+        // --- Swipe Gestures Logic ---
+        let touchstartX = 0;
+        let touchstartY = 0;
+        let touchendX = 0;
+        let touchendY = 0;
+
+        document.body.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        document.body.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, {passive: true});
+
+        function handleSwipe() {
+            const xDiff = touchendX - touchstartX;
+            const yDiff = Math.abs(touchendY - touchstartY);
+            const threshold = 60; // ਘੱਟੋ-ਘੱਟ ਇੰਨੀ ਸਵਾਈਪ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ
+            
+            // ਚੈੱਕ ਕਰੋ ਕਿ ਸਵਾਈਪ ਖੱਬੇ-ਸੱਜੇ ਹੈ (ਉੱਪਰ-ਥੱਲੇ ਸਕ੍ਰੋਲ ਨਹੀਂ)
+            if (Math.abs(xDiff) > threshold && yDiff < 60) {
+                const activeTab = document.querySelector('.tab-content.active').id;
+                const currentIndex = tabsList.indexOf(activeTab);
+
+                if (xDiff < 0) {
+                    // Swiped Left - ਅਗਲੀ ਟੈਬ 
+                    if (currentIndex < tabsList.length - 1) {
+                        openTab(tabsList[currentIndex + 1]);
+                    }
+                } else {
+                    // Swiped Right - ਪਿਛਲੀ ਟੈਬ
+                    if (currentIndex > 0) {
+                        openTab(tabsList[currentIndex - 1]);
+                    }
+                }
+            }
+        }
+
+        // --- Toggle Buttons ---
         function setType(typeValue) {
             document.getElementById('entry-type').value = typeValue;
             const btnExp = document.getElementById('btn-type-expense');
@@ -514,7 +606,7 @@
             document.getElementById('dash-expense').innerText = '₹' + totExp;
         }
 
-        // --- HTML5 Canvas Pie Charts ---
+        // --- Pie Charts ---
         function drawCharts() {
             let expData = {};
             let incData = {};
@@ -672,9 +764,30 @@
             updateUI();
         }
 
+        // ਡਿਲੀਟ ਬਟਨਾਂ ਨਾਲ ਲਿਸਟ ਦਿਖਾਉਣਾ
         function renderAdminLists() {
-            document.getElementById('list-exp-cat').innerText = data.expenseCats.join(', ');
-            document.getElementById('list-inc-cat').innerText = data.incomeCats.join(', ');
+            const expDiv = document.getElementById('list-exp-cat');
+            expDiv.innerHTML = data.expenseCats.map((cat, idx) => 
+                `<div class="cat-badge">${cat} <span class="del-icon" onclick="removeCategory('expense', ${idx})">✕</span></div>`
+            ).join('');
+
+            const incDiv = document.getElementById('list-inc-cat');
+            incDiv.innerHTML = data.incomeCats.map((cat, idx) => 
+                `<div class="cat-badge">${cat} <span class="del-icon" onclick="removeCategory('income', ${idx})">✕</span></div>`
+            ).join('');
+        }
+
+        // ਕੈਟਾਗਰੀ ਡਿਲੀਟ ਕਰਨ ਦਾ ਫੰਕਸ਼ਨ (ਪੁਰਾਣਾ ਡਾਟਾ ਬਚਾ ਕੇ ਰੱਖਦਾ ਹੈ)
+        function removeCategory(type, idx) {
+            if(confirm("ਕੀ ਤੁਸੀਂ ਇਸਨੂੰ ਲਿਸਟ ਵਿੱਚੋਂ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?\n(ਨੋਟ: ਇਸ ਨਾਲ ਤੁਹਾਡਾ ਪੁਰਾਣਾ ਹਿਸਾਬ-ਕਿਤਾਬ ਡਿਲੀਟ ਨਹੀਂ ਹੋਵੇਗਾ)")) {
+                if (type === 'expense') {
+                    data.expenseCats.splice(idx, 1);
+                } else {
+                    data.incomeCats.splice(idx, 1);
+                }
+                updateCategories();
+                updateUI();
+            }
         }
 
         function clearAllData() {
